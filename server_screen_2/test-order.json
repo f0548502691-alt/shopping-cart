@@ -1,0 +1,14 @@
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "fullAddress": "123 Test Street",
+  "email": "test@example.com",
+  "products": [
+    {
+      "id": "1",
+      "name": "Product",
+      "quantity": 1,
+      "price": 10.00
+    }
+  ]
+}
