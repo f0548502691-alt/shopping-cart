@@ -1,0 +1,63 @@
+const express = require('express');
+const router = express.Router();
+const Joi = require('joi');
+const { esClient, ensureIndex } = require('../services/elasticsearch');
+
+const orderSchema = Joi.object({
+  firstName: Joi.string().trim().min(1).required(),
+  lastName: Joi.string().trim().min(1).required(),
+  fullAddress: Joi.string().trim().min(5).required(),
+  email: Joi.string().email().required(),
+  products: Joi.array()
+    .items(
+      Joi.object({
+        id: Joi.string().required(),
+        name: Joi.string().required(),
+        quantity: Joi.number().integer().min(1).required(),
+        price: Joi.number().min(0).required(),
+      })
+    )
+    .min(1)
+    .required(),
+});
+
+router.post('/', async (req, res, next) => {
+  try {
+    console.log('[POST /api/orders] incoming body:', JSON.stringify(req.body));
+    await ensureIndex();
+    console.log('[POST /api/orders] index ensured');
+    const { error, value } = orderSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      console.warn('[POST /api/orders] validation error:', error.details.map((d) => d.message));
+      return res.status(400).json({
+        error: 'Validation error',
+        details: error.details.map((d) => d.message),
+      });
+    }
+
+    const doc = {
+      customer: {
+        firstName: value.firstName,
+        lastName: value.lastName,
+        fullAddress: value.fullAddress,
+        email: value.email,
+      },
+      products: value.products,
+      createdAt: new Date().toISOString(),
+    };
+
+    const result = await esClient.index({
+      index: process.env.ES_INDEX || 'orders',
+      document: doc,
+      refresh: 'wait_for',
+    });
+
+    console.log('[POST /api/orders] indexed:', result._id);
+    return res.status(201).json({ id: result._id, ...doc });
+  } catch (err) {
+    console.error('[POST /api/orders] error:', err);
+    next(err);
+  }
+});
+
+module.exports = router;

@@ -1,0 +1,25 @@
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "customer": {
+        "properties": {
+          "firstName": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "lastName": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "fullAddress": { "type": "text" },
+          "email": { "type": "keyword" }
+        }
+      },
+      "products": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "quantity": { "type": "integer" },
+          "price": { "type": "double" }
+        }
+      },
+      "createdAt": { "type": "date" }
+    }
+  }
+}
