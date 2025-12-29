@@ -1,24 +1,25 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { fetchProducts } from '../../api/api'
-
-export const loadProducts = createAsyncThunk(
-  'products/loadProducts',
-  async (categoryId) => {
-    const response = await fetchProducts(categoryId)
-    return response
-  }
-)
+import { createSlice } from '@reduxjs/toolkit'
+import { loadCategoriesWithProducts } from './categoriesSlice'
 
 const productsSlice = createSlice({
   name: 'products',
   initialState: {
     items: [],
+    allProducts: [],
     selectedProduct: null,
     selectedQuantity: 1,
     loading: false,
     error: null
   },
   reducers: {
+    filterProductsByCategory: (state, action) => {
+      const categoryId = action.payload
+      if (categoryId) {
+        state.items = state.allProducts.filter(p => p.categoryId === categoryId)
+      } else {
+        state.items = []
+      }
+    },
     selectProduct: (state, action) => {
       state.selectedProduct = action.payload
       state.selectedQuantity = 1
@@ -33,20 +34,22 @@ const productsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadProducts.pending, (state) => {
+      .addCase(loadCategoriesWithProducts.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(loadProducts.fulfilled, (state, action) => {
+      .addCase(loadCategoriesWithProducts.fulfilled, (state, action) => {
         state.loading = false
-        state.items = action.payload
+        // Flatten all products from all categories
+        state.allProducts = action.payload.flatMap(category => category.products)
+        state.items = []
       })
-      .addCase(loadProducts.rejected, (state, action) => {
+      .addCase(loadCategoriesWithProducts.rejected, (state, action) => {
         state.loading = false
         state.error = action.error.message
       })
   }
 })
 
-export const { selectProduct, updateQuantity, resetSelection } = productsSlice.actions
+export const { filterProductsByCategory, selectProduct, updateQuantity, resetSelection } = productsSlice.actions
 export default productsSlice.reducer
