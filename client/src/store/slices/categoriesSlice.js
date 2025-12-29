@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { fetchCategories } from '../../api/api'
+import { fetchCategoriesWithProducts } from '../../api/api'
 
-export const loadCategories = createAsyncThunk(
-  'categories/loadCategories',
+export const loadCategoriesWithProducts = createAsyncThunk(
+  'categories/loadCategoriesWithProducts',
   async () => {
-    const response = await fetchCategories()
+    const response = await fetchCategoriesWithProducts()
     return response
   }
 )
@@ -24,15 +24,15 @@ const categoriesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadCategories.pending, (state) => {
+      .addCase(loadCategoriesWithProducts.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(loadCategories.fulfilled, (state, action) => {
+      .addCase(loadCategoriesWithProducts.fulfilled, (state, action) => {
         state.loading = false
         state.items = action.payload
       })
-      .addCase(loadCategories.rejected, (state, action) => {
+      .addCase(loadCategoriesWithProducts.rejected, (state, action) => {
         state.loading = false
         state.error = action.error.message
       })

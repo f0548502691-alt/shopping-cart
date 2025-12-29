@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { loadCategories } from '../../store/slices/categoriesSlice'
-import { loadProducts } from '../../store/slices/productsSlice'
+import { loadCategoriesWithProducts } from '../../store/slices/categoriesSlice'
 import CategorySelector from './CategorySelector'
 import ProductSelector from './ProductSelector'
 import Cart from './Cart'
@@ -16,7 +15,7 @@ const ShoppingList = () => {
   const { loading: productsLoading } = useSelector(state => state.products)
 
   useEffect(() => {
-    dispatch(loadCategories())
+    dispatch(loadCategoriesWithProducts())
   }, [dispatch])
 
   const handleContinueOrder = () => {
