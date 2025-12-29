@@ -1,4 +1,30 @@
+version: "3.9"
+
 services:
+  # ---------------------------
+  # SQL Server (for server1 .NET)
+  # ---------------------------
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-shopping
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Strong!Passw0rd123"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1433'"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+
+  # ---------------------------
+  # Elasticsearch (for orders)
+  # ---------------------------
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
     container_name: es-orders
@@ -15,8 +41,9 @@ services:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
       interval: 5s
       timeout: 3s
-      retries: 30
+      retries: 60
 
+  # Create index + mapping once ES is up
   es-init:
     image: curlimages/curl:8.5.0
     container_name: es-init-orders
@@ -34,13 +61,29 @@ services:
       if curl -fsS "$$ES_NODE/$$ES_INDEX" >/dev/null 2>&1; then
         echo "Index exists. Skipping.";
       else
-        echo "Creating index '$$ES_INDEX' from mapping.json..." &&
         curl -fsS -X PUT "$$ES_NODE/$$ES_INDEX"
           -H "Content-Type: application/json"
           --data-binary @/mapping.json &&
         echo "" && echo "Done.";
       fi
 
+  # ---------------------------
+  # Kibana UI
+  # ---------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana-orders
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # ---------------------------
+  # Server1 (.NET 8) - Screen 1
+  # ---------------------------
   server1:
     build:
       context: ./server
@@ -48,9 +91,19 @@ services:
     container_name: server1-dotnet
     environment:
       - ASPNETCORE_URLS=http://+:8080
+      # This overrides appsettings.json "DefaultConnection" (LocalDB) so it works in Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ShoppingListDb;User Id=sa;Password=Strong!Passw0rd123;TrustServerCertificate=True;
+      # In case your code uses a different key:
+      - ConnectionStrings__Default=Server=sqlserver,1433;Database=ShoppingListDb;User Id=sa;Password=Strong!Passw0rd123;TrustServerCertificate=True;
     ports:
       - "8080:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
 
+  # ---------------------------
+  # Server2 (Node) - Screen 2
+  # ---------------------------
   server2:
     build:
       context: ./server_screen_2
@@ -65,17 +118,26 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+      es-init:
+        condition: service_started
 
+  # ---------------------------
+  # Client (React + Vite dev server) - avoids nginx:alpine pull
+  # ---------------------------
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: client-react
+    environment:
+      - VITE_SERVER1_URL=http://localhost:7078
+      - VITE_SERVER2_URL=http://localhost:3001
     ports:
-      - "3000:80"
+      - "3000:5173"
     depends_on:
       - server1
       - server2
 
 volumes:
   esdata:
+  sqldata:
