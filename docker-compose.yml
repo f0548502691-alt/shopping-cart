@@ -1,76 +1,85 @@
 services:
+  # --- SQL Server (for server1 .NET, replaces LocalDB) ---
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Strong!Passw0rd123"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+
+  # --- Elasticsearch (for server2 Node orders) ---
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
-    container_name: es-orders
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
 
+  # --- Create index + mapping (waits for ES) ---
   es-init:
     image: curlimages/curl:8.5.0
-    container_name: es-init-orders
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+      - elasticsearch
     volumes:
       - ./elasticsearch/index-mapping.json:/mapping.json:ro
     environment:
-      - ES_NODE=http://elasticsearch:9200
-      - ES_INDEX=orders
+      ES_NODE: "http://elasticsearch:9200"
+      ES_INDEX: "orders"
     entrypoint: ["/bin/sh", "-c"]
     command: >
+      echo "Waiting for Elasticsearch..." &&
+      until curl -fsS "$$ES_NODE" >/dev/null 2>&1; do
+        echo "ES not ready yet..."; sleep 2;
+      done &&
       echo "Ensuring index '$$ES_INDEX'..." &&
       if curl -fsS "$$ES_NODE/$$ES_INDEX" >/dev/null 2>&1; then
         echo "Index exists. Skipping.";
       else
-        echo "Creating index '$$ES_INDEX' from mapping.json..." &&
         curl -fsS -X PUT "$$ES_NODE/$$ES_INDEX"
           -H "Content-Type: application/json"
           --data-binary @/mapping.json &&
         echo "" && echo "Done.";
       fi
 
+  # --- Server 1 (.NET 8) - Screen 1 categories/products ---
   server1:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: server1-dotnet
     environment:
-      - ASPNETCORE_URLS=http://+:8080
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=ShoppingListDb;User Id=sa;Password=Strong!Passw0rd123;TrustServerCertificate=True;"
     ports:
       - "8080:8080"
+    depends_on:
+      - sqlserver
 
+  # --- Server 2 (Node) - Screen 2 orders to Elasticsearch ---
   server2:
     build:
       context: ./server_screen_2
-      dockerfile: Dockerfile
-    container_name: server2-node
     environment:
-      - PORT=3001
-      - ES_NODE=http://elasticsearch:9200
-      - ES_INDEX=orders
+      PORT: "3001"
+      ES_NODE: "http://elasticsearch:9200"
+      ES_INDEX: "orders"
     ports:
       - "3001:3001"
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+      - elasticsearch
+      - es-init
 
+  # --- Client (React) ---
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
-    container_name: client-react
     ports:
       - "3000:80"
     depends_on:
@@ -79,3 +88,4 @@ services:
 
 volumes:
   esdata:
+  sqldata:
