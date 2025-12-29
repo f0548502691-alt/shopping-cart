@@ -113,26 +113,6 @@ Stop everything
 
 docker compose down
 
-🌐 Services & Ports
-
-Client (React UI)
-http://localhost:3000
-
-Server 1 – .NET API
-http://localhost:7078
-
-Server 2 – Node API
-http://localhost:3001
-
-SQL Server
-localhost:1433
-
-Elasticsearch
-http://localhost:9200
-
-Kibana
-http://localhost:5601
-
 🔗 Important API Endpoints
 Server 1 (.NET – Categories & Products)
 
@@ -180,12 +160,6 @@ Last 7 days
 You should now see the saved orders documents.
 
 ⚠️ Notes & Common Pitfalls
-
-LocalDB is not supported in Docker
-SQL Server container replaces (localdb)\MSSQLLocalDB
-
-If the client cannot reach the API
-Check API base URLs and exposed ports in docker-compose.yml
 
 If Kibana shows no data
 
