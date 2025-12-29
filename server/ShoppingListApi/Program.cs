@@ -59,6 +59,28 @@ app.MapGet("/api/categories", async (AppDbContext db) =>
     return Results.Ok(data);
 });
 
+app.MapGet("/api/categories-with-products", async (AppDbContext db) =>
+{
+    var data = await db.Categories
+        .Include(c => c.Products)
+        .OrderBy(c => c.Name)
+        .Select(c => new
+        {
+            c.Id,
+            c.Name,
+            Products = c.Products.OrderBy(p => p.Name).Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Sku,
+                p.UnitPrice
+            }).ToList()
+        })
+        .ToListAsync();
+
+    return Results.Ok(data);
+});
+
 app.MapGet("/api/categories/{categoryId:int}/products", async (int categoryId, AppDbContext db) =>
 {
     var exists = await db.Categories.AnyAsync(c => c.Id == categoryId);

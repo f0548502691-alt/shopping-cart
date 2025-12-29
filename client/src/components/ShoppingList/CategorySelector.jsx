@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { selectCategory } from '../../store/slices/categoriesSlice'
-import { loadProducts } from '../../store/slices/productsSlice'
+import { filterProductsByCategory } from '../../store/slices/productsSlice'
 
 const CategorySelector = () => {
   const dispatch = useDispatch()
@@ -9,9 +9,7 @@ const CategorySelector = () => {
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value ? parseInt(e.target.value) : null
     dispatch(selectCategory(categoryId))
-    if (categoryId) {
-      dispatch(loadProducts(categoryId))
-    }
+    dispatch(filterProductsByCategory(categoryId))
   }
 
   return (
