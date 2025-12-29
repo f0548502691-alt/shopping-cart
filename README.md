@@ -43,12 +43,7 @@ docker compose up --build
 
 docker compose up -d --build
 
-
-🛒 Shopping Cart – Full Stack Dockerized Project
-
-פרויקט Full-Stack המדגים מערכת הזמנות מלאה, כולל Client, שני שרתים, מסד נתונים, Elasticsearch ו־Kibana — הכול רץ באמצעות Docker Compose בפקודה אחת.
-
-🧱 Architecture Overview
+### 🧱 Architecture Overview
 
 Client (React + Vite + Redux)
 ↓
@@ -64,56 +59,7 @@ Elasticsearch
 ↓
 Kibana (UI לניהול ו־צפייה בנתונים)
 
-📦 Tech Stack
-
-Frontend
-
-React
-
-Vite
-
-Redux Toolkit
-
-Backend
-
-ASP.NET Core (.NET) – מסך ראשון
-
-Node.js (Express / Nest) – מסך שני
-
-Databases
-
-SQL Server 2022 (Docker)
-
-Elasticsearch 8.x
-
-Infrastructure
-
-Docker
-
-Docker Compose
-
-🚀 How to Run the Project
-Prerequisites
-
-Docker Desktop
-
-Docker Compose
-
-Git
-
-Run everything
-
-docker compose up --build
-
-Run in background
-
-docker compose up -d --build
-
-Stop everything
-
-docker compose down
-
-🔗 Important API Endpoints
+### 🔗 Important API Endpoints
 Server 1 (.NET – Categories & Products)
 
 GET http://localhost:7078/api/categories
@@ -124,7 +70,7 @@ POST http://localhost:3001/api/orders
 
 GET http://localhost:3001/api/orders
 
-🔍 Verify Elasticsearch Data
+### 🔍 Verify Elasticsearch Data
 
 List indices
 GET http://localhost:9200/_cat/indices?v
@@ -159,7 +105,7 @@ Last 7 days
 
 You should now see the saved orders documents.
 
-⚠️ Notes & Common Pitfalls
+### ⚠️ Notes & Common Pitfalls
 
 If Kibana shows no data
 
@@ -167,7 +113,7 @@ Ensure Data View exists
 
 Increase time range (not “Last 15 minutes”)
 
-📁 Project Structure
+### 📁 Project Structure
 
 shopping-cart
 │
@@ -179,11 +125,11 @@ shopping-cart
 ├── docker-compose.yml
 └── README.md
 
-👩‍💻 Author
+### 👩‍💻 Author
 
 Lea Fishman
 
-📄 License
+### 📄 License
 
 Personal / Educational use only.
 
