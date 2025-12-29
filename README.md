@@ -42,7 +42,7 @@
 docker compose up --build
 
 docker compose up -d --build
-
+```
 ### 🧱 Architecture Overview
 
 Client (React + Vite + Redux)
